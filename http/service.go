@@ -5,13 +5,12 @@ package httpd
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/lsx0519/raftdb/store"
 	"io"
 	"log"
 	"net"
 	"net/http"
 	"strings"
-
-	"github.com/hanj4096/raftdb/store"
 )
 
 // Store is the interface Raft-backed key-value stores must implement.
@@ -73,6 +72,7 @@ func (s *Service) Start() error {
 
 	http.Handle("/", s)
 
+	// 开启携程处理网络请求
 	go func() {
 		err := server.Serve(s.ln)
 		if err != nil {
@@ -90,6 +90,7 @@ func (s *Service) Close() {
 }
 
 // ServeHTTP allows Service to serve HTTP requests.
+// 此处实现Handler接口，其余接口实现均是处理网络请求的操作，实现的是Store接口
 func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if strings.HasPrefix(r.URL.Path, "/key") {
 		s.handleKeyRequest(w, r)

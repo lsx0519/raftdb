@@ -5,14 +5,13 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	httpd "github.com/lsx0519/raftdb/http"
+	"github.com/lsx0519/raftdb/store"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
 	"time"
-
-	"github.com/hanj4096/raftdb/http"
-	"github.com/hanj4096/raftdb/store"
 )
 
 // Command line defaults
@@ -28,6 +27,14 @@ var joinAddr string
 var nodeID string
 
 func init() {
+	/*
+			func StringVar(p *string, name string, value string, usage string)
+			把指定的name参数绑定到p所指向的变量，value是默认值，usage是参数描述
+
+		flag使用流程：
+			1. 定义flag  使用flag.String()或者flag.StringVar这种方式
+			2. flag.Parse()
+	*/
 	flag.StringVar(&httpAddr, "haddr", DefaultHTTPAddr, "Set the HTTP bind address")
 	flag.StringVar(&raftAddr, "raddr", DefaultRaftAddr, "Set Raft bind address")
 	flag.StringVar(&joinAddr, "join", "", "Set join address, if any")
@@ -39,6 +46,7 @@ func init() {
 }
 
 func main() {
+	// 将命令行参数解析绑定到指定变量
 	flag.Parse()
 
 	if flag.NArg() == 0 {
@@ -57,6 +65,7 @@ func main() {
 	s := store.New()
 	s.RaftDir = raftDir
 	s.RaftBind = raftAddr
+	// 构建raft节点入口
 	if err := s.Open(joinAddr == "", nodeID); err != nil {
 		log.Fatalf("failed to open store: %s", err.Error())
 	}
@@ -82,6 +91,7 @@ func main() {
 		log.Fatalf("failed to SetMeta at %s: %s", nodeID, err.Error())
 	}
 
+	// 处理增删查改请求
 	h := httpd.New(httpAddr, s)
 	if err := h.Start(); err != nil {
 		log.Fatalf("failed to start HTTP service: %s", err.Error())
